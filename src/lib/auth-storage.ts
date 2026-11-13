@@ -1,0 +1,87 @@
+const TOKEN_KEY = "sd_admin_token";
+const REFRESH_KEY = "sd_admin_refresh";
+const ADMIN_KEY = "sd_admin";
+const REMEMBER_KEY = "sd_admin_remember";
+
+export type StoredAdmin = {
+  id: number;
+  username: string;
+  displayName: string;
+  role: string;
+};
+
+function store(remember: boolean): Storage {
+  if (typeof window === "undefined") {
+    throw new Error("auth storage is client-only");
+  }
+  return remember ? window.localStorage : window.sessionStorage;
+}
+
+function clearBoth() {
+  if (typeof window === "undefined") return;
+  for (const s of [window.localStorage, window.sessionStorage]) {
+    s.removeItem(TOKEN_KEY);
+    s.removeItem(REFRESH_KEY);
+    s.removeItem(ADMIN_KEY);
+  }
+  window.localStorage.removeItem(REMEMBER_KEY);
+}
+
+export function saveAuthSession(params: {
+  accessToken: string;
+  refreshToken: string;
+  admin: StoredAdmin;
+  remember: boolean;
+}) {
+  clearBoth();
+  const s = store(params.remember);
+  s.setItem(TOKEN_KEY, params.accessToken);
+  s.setItem(REFRESH_KEY, params.refreshToken);
+  s.setItem(ADMIN_KEY, JSON.stringify(params.admin));
+  window.localStorage.setItem(REMEMBER_KEY, params.remember ? "1" : "0");
+}
+
+export function patchAccessToken(accessToken: string, remember: boolean) {
+  store(remember).setItem(TOKEN_KEY, accessToken);
+}
+
+export function patchTokens(
+  accessToken: string,
+  refreshToken: string,
+  remember: boolean,
+) {
+  const s = store(remember);
+  s.setItem(TOKEN_KEY, accessToken);
+  s.setItem(REFRESH_KEY, refreshToken);
+}
+
+export function loadAuthSession(): {
+  accessToken: string;
+  refreshToken: string | null;
+  admin: StoredAdmin;
+  remember: boolean;
+} | null {
+  if (typeof window === "undefined") return null;
+  const remember = window.localStorage.getItem(REMEMBER_KEY) === "1";
+  const s = store(remember);
+  const accessToken = s.getItem(TOKEN_KEY);
+  const refreshToken = s.getItem(REFRESH_KEY);
+  const raw = s.getItem(ADMIN_KEY);
+  if (!accessToken || !raw) return null;
+  try {
+    const admin = JSON.parse(raw) as StoredAdmin;
+    if (!admin?.id || !admin?.username) return null;
+    return { accessToken, refreshToken, admin, remember };
+  } catch {
+    return null;
+  }
+}
+
+export function getRefreshToken(remember: boolean): string | null {
+  if (typeof window === "undefined") return null;
+  return store(remember).getItem(REFRESH_KEY);
+}
+
+export function clearAuthSession() {
+  clearBoth();
+}

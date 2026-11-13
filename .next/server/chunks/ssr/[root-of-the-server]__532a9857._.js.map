@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
+    {"offset": {"line": 15, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/HP/Desktop/Folders/game/frontend-admin/src/app/%28ops%29/rate/page.tsx"],"sourcesContent":["export default function RatePage() {\r\n  return (\r\n    <div className=\"flex min-h-[50vh] items-center justify-center text-[#8a8070]\">\r\n      Rate page UI coming next.\r\n    </div>\r\n  );\r\n}\r\n"],"names":[],"mappings":";;;;;;AAAe,SAAS;IACtB,qBACE,8OAAC;QAAI,WAAU;kBAA+D;;;;;;AAIlF","debugId":null}}]
+}
