@@ -5,6 +5,10 @@ import {
   useGetAdminRateQuery,
   useSetAdminRateMutation,
 } from "@/store/api/paymentsApi";
+import {
+  useGetTelegramRegisterQuery,
+  useSetTelegramRegisterMutation,
+} from "@/store/api/settingsApi";
 
 export default function RatePage() {
   const { data, isFetching, isError, error, refetch } = useGetAdminRateQuery(
@@ -13,14 +17,28 @@ export default function RatePage() {
   );
   const [setRate, { isLoading: saving }] = useSetAdminRateMutation();
 
+  const { data: tgData, isFetching: tgFetching } = useGetTelegramRegisterQuery();
+  const [setTelegram, { isLoading: tgSaving }] =
+    useSetTelegramRegisterMutation();
+
   const current = data?.mmkPerUsd ?? "";
   const [value, setValue] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
 
+  const [tgUrl, setTgUrl] = useState("");
+  const [tgError, setTgError] = useState<string | null>(null);
+  const [tgFlash, setTgFlash] = useState(false);
+
   useEffect(() => {
     if (current) setValue(current);
   }, [current]);
+
+  useEffect(() => {
+    if (typeof tgData?.telegramRegisterUrl === "string") {
+      setTgUrl(tgData.telegramRegisterUrl);
+    }
+  }, [tgData?.telegramRegisterUrl]);
 
   const previewUsd = useMemo(() => {
     const rate = Number(value || current || 0);
@@ -56,6 +74,59 @@ export default function RatePage() {
           {isFetching ? " · refreshing…" : ""}
         </p>
       </div>
+
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setTgError(null);
+          setTgFlash(false);
+          const url = tgUrl.trim();
+          if (!/^https:\/\/(t\.me|telegram\.me)\//i.test(url)) {
+            setTgError("Use an https://t.me/… or https://telegram.me/… link.");
+            return;
+          }
+          try {
+            await setTelegram({ telegramRegisterUrl: url }).unwrap();
+            setTgFlash(true);
+          } catch (err) {
+            setTgError(extractError(err));
+          }
+        }}
+        className="rounded-xl border border-[#d4af37]/35 bg-[#0c0c0c] p-5"
+      >
+        <p className="text-[0.68rem] font-semibold tracking-[0.16em] text-[#8a8070]">
+          TELEGRAM REGISTER
+          {tgFetching ? " · loading…" : ""}
+        </p>
+        <p className="mt-2 text-sm text-[#9a9280]">
+          Login “Register Now” opens this channel / bot link (mobile + web).
+        </p>
+        <label className="mt-4 block">
+          <span className="mb-1 block text-[0.7rem] font-semibold tracking-[0.12em] text-[#d4af37]">
+            TELEGRAM URL
+          </span>
+          <input
+            value={tgUrl}
+            onChange={(e) => setTgUrl(e.target.value)}
+            placeholder="https://t.me/your_channel"
+            disabled={tgSaving}
+            className="w-full rounded-md border border-[#3a3220] bg-[#101010] px-3 py-2.5 text-sm text-[#f5efe0]"
+          />
+        </label>
+        {tgError ? (
+          <p className="mt-3 text-sm text-[#ff8f8f]">{tgError}</p>
+        ) : null}
+        {tgFlash ? (
+          <p className="mt-3 text-sm text-[#7dffa3]">Telegram register URL saved.</p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={tgSaving || tgUrl.trim() === (tgData?.telegramRegisterUrl ?? "")}
+          className="mt-4 rounded-md bg-[linear-gradient(180deg,#e0c56a_0%,#d4af37_55%,#b8922a_100%)] px-4 py-2.5 text-sm font-extrabold tracking-[0.1em] text-[#1a1205] disabled:opacity-60"
+        >
+          {tgSaving ? "SAVING…" : "SAVE TELEGRAM URL"}
+        </button>
+      </form>
 
       {isError ? (
         <div className="rounded-xl border border-[#e74c3c]/40 bg-[rgba(120,30,30,0.2)] px-4 py-6 text-center">
