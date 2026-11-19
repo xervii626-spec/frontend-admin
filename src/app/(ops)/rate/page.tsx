@@ -6,7 +6,9 @@ import {
   useSetAdminRateMutation,
 } from "@/store/api/paymentsApi";
 import {
+  useGetDailyLoginBonusQuery,
   useGetTelegramRegisterQuery,
+  useSetDailyLoginBonusMutation,
   useSetTelegramRegisterMutation,
 } from "@/store/api/settingsApi";
 
@@ -21,6 +23,10 @@ export default function RatePage() {
   const [setTelegram, { isLoading: tgSaving }] =
     useSetTelegramRegisterMutation();
 
+  const { data: dailyData } = useGetDailyLoginBonusQuery();
+  const [setDaily, { isLoading: dailySaving }] =
+    useSetDailyLoginBonusMutation();
+
   const current = data?.mmkPerUsd ?? "";
   const [value, setValue] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -29,6 +35,10 @@ export default function RatePage() {
   const [tgUrl, setTgUrl] = useState("");
   const [tgError, setTgError] = useState<string | null>(null);
   const [tgFlash, setTgFlash] = useState(false);
+
+  const [dailyUsd, setDailyUsd] = useState("");
+  const [dailyError, setDailyError] = useState<string | null>(null);
+  const [dailyFlash, setDailyFlash] = useState(false);
 
   useEffect(() => {
     if (current) setValue(current);
@@ -39,6 +49,12 @@ export default function RatePage() {
       setTgUrl(tgData.telegramRegisterUrl);
     }
   }, [tgData?.telegramRegisterUrl]);
+
+  useEffect(() => {
+    if (typeof dailyData?.dailyLoginBonusUsd === "string") {
+      setDailyUsd(dailyData.dailyLoginBonusUsd);
+    }
+  }, [dailyData?.dailyLoginBonusUsd]);
 
   const previewUsd = useMemo(() => {
     const rate = Number(value || current || 0);
@@ -125,6 +141,60 @@ export default function RatePage() {
           className="mt-4 rounded-md bg-[linear-gradient(180deg,#e0c56a_0%,#d4af37_55%,#b8922a_100%)] px-4 py-2.5 text-sm font-extrabold tracking-[0.1em] text-[#1a1205] disabled:opacity-60"
         >
           {tgSaving ? "SAVING…" : "SAVE TELEGRAM URL"}
+        </button>
+      </form>
+
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setDailyError(null);
+          setDailyFlash(false);
+          if (!/^\d+(\.\d{1,4})?$/.test(dailyUsd) || Number(dailyUsd) <= 0) {
+            setDailyError("Enter a positive USD amount (max 4 decimals).");
+            return;
+          }
+          try {
+            await setDaily({ dailyLoginBonusUsd: dailyUsd }).unwrap();
+            setDailyFlash(true);
+          } catch (err) {
+            setDailyError(extractError(err));
+          }
+        }}
+        className="rounded-xl border border-[#d4af37]/35 bg-[#0c0c0c] p-5"
+      >
+        <p className="text-[0.68rem] font-semibold tracking-[0.16em] text-[#8a8070]">
+          DAILY LOGIN BONUS
+        </p>
+        <p className="mt-2 text-sm text-[#9a9280]">
+          Credited to play-only bonusMoney once per Yangon calendar day.
+        </p>
+        <label className="mt-4 block">
+          <span className="mb-1 block text-[0.7rem] font-semibold tracking-[0.12em] text-[#d4af37]">
+            AMOUNT (USD)
+          </span>
+          <input
+            value={dailyUsd}
+            onChange={(e) => setDailyUsd(e.target.value.replace(/[^\d.]/g, ""))}
+            inputMode="decimal"
+            disabled={dailySaving}
+            className="w-full rounded-md border border-[#3a3220] bg-[#101010] px-3 py-2.5 text-sm tabular-nums text-[#f5efe0]"
+          />
+        </label>
+        {dailyError ? (
+          <p className="mt-3 text-sm text-[#ff8f8f]">{dailyError}</p>
+        ) : null}
+        {dailyFlash ? (
+          <p className="mt-3 text-sm text-[#7dffa3]">Daily login bonus saved.</p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={
+            dailySaving ||
+            dailyUsd === (dailyData?.dailyLoginBonusUsd ?? "")
+          }
+          className="mt-4 rounded-md bg-[linear-gradient(180deg,#e0c56a_0%,#d4af37_55%,#b8922a_100%)] px-4 py-2.5 text-sm font-extrabold tracking-[0.1em] text-[#1a1205] disabled:opacity-60"
+        >
+          {dailySaving ? "SAVING…" : "SAVE DAILY BONUS"}
         </button>
       </form>
 
