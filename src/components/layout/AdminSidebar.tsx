@@ -11,6 +11,7 @@ const NAV = [
   { href: "/payments", label: "PAYMENTS", icon: "card" as const },
   { href: "/rate", label: "RATE", icon: "trend" as const },
   { href: "/agents", label: "AGENTS", icon: "agents" as const },
+  { href: "/quests", label: "QUESTS", icon: "quests" as const },
 ];
 
 export function AdminSidebar() {
@@ -176,6 +177,14 @@ function NavIcon({ name }: { name: (typeof NAV)[number]["icon"] }) {
         <path d="M2.2 18.5c.6-2.4 1.9-3.6 3.6-3.6" />
         <circle cx="18.5" cy="9" r="2.1" />
         <path d="M18.2 14.9c1.7 0 3 1.2 3.6 3.6" />
+      </svg>
+    );
+  }
+
+  if (name === "quests") {
+    return (
+      <svg {...common}>
+        <path d="M12 3.5 14.2 9.2 20 10l-4.2 3.8L17 20l-5-2.8L7 20l1.2-6.2L4 10l5.8-.8L12 3.5Z" />
       </svg>
     );
   }
